@@ -19,6 +19,14 @@ hs_err_pid*
 *.iml
 *.iws
 
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
 # Mac
 
 .DS_Store
