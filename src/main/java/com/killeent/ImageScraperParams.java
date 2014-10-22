@@ -3,10 +3,8 @@ package com.killeent;
 /**
  * Original Author: Trevor Killeen (2014)
  *
- * TODO: refactor this into a builder pattern?
- *
  * Parameters to pass to an Image Scraper which specify the behavior
- * of a call to {@link com.killeent.ImageScraper#ScrapePage(java.net.URI, String,
+ * of a call to {@link com.killeent.ImageScraper#scrapePage(java.net.URI, String,
  * ImageScraperParams)}
  */
 public class ImageScraperParams {

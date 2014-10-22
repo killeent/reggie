@@ -21,6 +21,6 @@ public interface ImageScraper {
      * @param path The path representing the directory in which to save images.
      * @param params Parameters that specify behavior of the scraping.
      */
-    void ScrapePage(URI url, String path, ImageScraperParams params);
+    void scrapePage(URI url, String path, ImageScraperParams params);
 
 }

@@ -82,12 +82,12 @@ public class Reggie {
         // okay we have everything, let's scrape some images! (placeholder for now)
         ImageScraper scraper = new ImageScraper() {
             @Override
-            public void ScrapePage(URI url, String path, ImageScraperParams params) {
+            public void scrapePage(URI url, String path, ImageScraperParams params) {
 
             }
         };
 
-        scraper.ScrapePage(uri, directory, params);
+        scraper.scrapePage(uri, directory, params);
     }
 
     private static void usage() {
