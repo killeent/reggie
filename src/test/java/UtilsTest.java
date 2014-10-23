@@ -12,6 +12,8 @@ import java.net.URL;
  */
 public class UtilsTest {
 
+    // Tests for isOutboundLink
+
     /**
      * Tests that non-outbound links return false in a call to
      * {@link com.killeent.Utils#isOutboundLink(java.net.URL, java.net.URL)}
@@ -41,5 +43,9 @@ public class UtilsTest {
             Assert.fail("Invalid format for testIsOutboundLinkTrue");
         }
     }
+
+    // Tests for getHTML
+
+    // TODO: implement this
 
 }

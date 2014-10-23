@@ -1,5 +1,8 @@
 package com.killeent;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 
 /**
@@ -18,6 +21,24 @@ public class Utils {
      */
     public static boolean isOutboundLink(URL original, URL toCheck) {
         return !original.getHost().equals(toCheck.getHost());
+    }
+
+    /**
+     * Retrieves the HTML string for the given URL.
+     *
+     * @param url The URL to connect to.
+     * @throws java.io.IOException if we cannot connect to the URL for whatever reason.
+     * @return the HTML of that page, as a String.
+     */
+    public static String getHTML(URL url) throws IOException {
+        BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()));
+        StringBuilder result = new StringBuilder();
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            result.append(inputLine);
+        }
+        in.close();
+        return result.toString();
     }
 
 }
