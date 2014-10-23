@@ -1,14 +1,14 @@
+import com.killeent.ImageScraperParams;
 import com.killeent.Reggie;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
-import java.text.ParseException;
 
 /**
  * Original Author: Trevor Killeen (2014)
  *
- * Unit tests for command line parsing.
+ * Unit tests for {@link com.killeent.Reggie#parseCommandLineParameters(String[])}.
  */
 public class CommandLineTest {
 
@@ -100,5 +100,84 @@ public class CommandLineTest {
             Assert.assertEquals(e.getCause().getClass(), NumberFormatException.class);
             throw e;
         }
+    }
+
+    /**
+     * Tests that an exception is thrown if we pass in too many arguments.
+     */
+    @Test(expected = IllegalArgumentException.class)
+    public void testTooManyArguments() {
+        Reggie.parseCommandLineParameters(
+                new String[]{
+                        String.format("-%s", Reggie.OUTBOUND_FLAG),
+                        String.format("--%s=10", Reggie.DEPTH_FLAG),
+                        "http://google.com",
+                        System.getProperty("java.io.tmpdir"),
+                        "extra argument"});
+    }
+
+    // Tests for when things go right!
+
+    /**
+     * Tests proper parsing of just a URL and a directory.
+     */
+    @Test
+    public void testParseURLAndDirectory() {
+        ImageScraperParams params = Reggie.parseCommandLineParameters(
+                new String[]{"http://google.com", System.getProperty("java.io.tmpdir")});
+        Assert.assertEquals(
+                params.followOutboundLinks(), ImageScraperParams.DEFAULT_FOLLOW_OUTBOUND_LINKS);
+        Assert.assertEquals(params.maxDepth(), ImageScraperParams.DEFAULT_MAX_DEPTH);
+        Assert.assertEquals(params.getURL().toString(), "http://google.com");
+        Assert.assertEquals(params.getDirectory(), System.getProperty("java.io.tmpdir"));
+    }
+
+    /**
+     * Tests proper parsing of outbound flag set to true.
+     */
+    @Test
+    public void testParseOutboundFlag() {
+        ImageScraperParams params = Reggie.parseCommandLineParameters(
+                new String[]{
+                        String.format("-%s", Reggie.OUTBOUND_FLAG),
+                        "http://google.com",
+                        System.getProperty("java.io.tmpdir")});
+        Assert.assertTrue(params.followOutboundLinks());
+        Assert.assertEquals(params.maxDepth(), ImageScraperParams.DEFAULT_MAX_DEPTH);
+        Assert.assertEquals(params.getURL().toString(), "http://google.com");
+        Assert.assertEquals(params.getDirectory(), System.getProperty("java.io.tmpdir"));
+    }
+
+    /**
+     * Tests proper parsing of max depth set to some value.
+     */
+    @Test
+    public void testParseMaxDepth() {
+        ImageScraperParams params = Reggie.parseCommandLineParameters(
+                new String[]{
+                        String.format("--%s=10", Reggie.DEPTH_FLAG),
+                        "http://google.com",
+                        System.getProperty("java.io.tmpdir")});
+        Assert.assertEquals(params.followOutboundLinks(), ImageScraperParams.DEFAULT_FOLLOW_OUTBOUND_LINKS);
+        Assert.assertEquals(params.maxDepth(), 10);
+        Assert.assertEquals(params.getURL().toString(), "http://google.com");
+        Assert.assertEquals(params.getDirectory(), System.getProperty("java.io.tmpdir"));
+    }
+
+    /**
+     * Tests proper parsing of a full array of arguments to reggie.
+     */
+    @Test
+    public void testParseAllArguments() {
+        ImageScraperParams params = Reggie.parseCommandLineParameters(
+                new String[]{
+                        String.format("-%s", Reggie.OUTBOUND_FLAG),
+                        String.format("--%s=10", Reggie.DEPTH_FLAG),
+                        "http://google.com",
+                        System.getProperty("java.io.tmpdir")});
+        Assert.assertTrue(params.followOutboundLinks());
+        Assert.assertEquals(params.maxDepth(), 10);
+        Assert.assertEquals(params.getURL().toString(), "http://google.com");
+        Assert.assertEquals(params.getDirectory(), System.getProperty("java.io.tmpdir"));
     }
 }

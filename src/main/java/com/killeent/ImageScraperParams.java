@@ -12,8 +12,8 @@ public class ImageScraperParams {
 
     // Here is where we specify the default behavior for parameters in ScrapeImageParams. We need
     // to specify defaults for every single optional parameter.
-    private static final int DEFAULT_MAX_DEPTH = 3;
-    private static final boolean DEFAULT_FOLLOW_OUTBOUND_LINKS = false;
+    public static final int DEFAULT_MAX_DEPTH = 3;
+    public static final boolean DEFAULT_FOLLOW_OUTBOUND_LINKS = false;
 
     // The parameters themselves
     private final URL url;
@@ -21,19 +21,19 @@ public class ImageScraperParams {
     private final int maxDepth;
     private final boolean followOutboundLinks;
 
-    private URL getUri() {
+    public URL getURL() {
         return url;
     }
 
-    private String getDirectory() {
+    public String getDirectory() {
         return directory;
     }
 
-    private int maxDepth() {
+    public int maxDepth() {
         return maxDepth;
     }
 
-    private boolean followOutboundLinks() {
+    public boolean followOutboundLinks() {
         return followOutboundLinks;
     }
 
