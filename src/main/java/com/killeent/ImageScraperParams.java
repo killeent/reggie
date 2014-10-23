@@ -1,13 +1,12 @@
 package com.killeent;
 
-import java.net.URI;
+import java.net.URL;
 
 /**
  * Original Author: Trevor Killeen (2014)
  *
  * Parameters to pass to an Image Scraper which specify the behavior
- * of a call to {@link com.killeent.ImageScraper#scrapePage(java.net.URI, String,
- * ImageScraperParams)}
+ * of a call to {@link com.killeent.ImageScraper#scrapePage(ImageScraperParams)}
  */
 public class ImageScraperParams {
 
@@ -17,13 +16,13 @@ public class ImageScraperParams {
     private static final boolean DEFAULT_FOLLOW_OUTBOUND_LINKS = false;
 
     // The parameters themselves
-    private final URI uri;
+    private final URL url;
     private final String directory;
     private final int maxDepth;
     private final boolean followOutboundLinks;
 
-    private URI getUri() {
-        return uri;
+    private URL getUri() {
+        return url;
     }
 
     private String getDirectory() {
@@ -39,7 +38,7 @@ public class ImageScraperParams {
     }
 
     private ImageScraperParams(Builder builder) {
-        this.uri = builder.uri;
+        this.url = builder.url;
         this.directory = builder.directory;
         this.maxDepth = builder.maxDepth;
         this.followOutboundLinks = builder.followOutboundLinks;
@@ -47,7 +46,7 @@ public class ImageScraperParams {
 
     public static class Builder {
         // Required Parameters
-        private final URI uri;
+        private final URL url;
         private final String directory;
 
         // Optional Parameters
@@ -58,11 +57,11 @@ public class ImageScraperParams {
          * Constructs a {@link com.killeent.ImageScraperParams} builder with the required
          * parameters.
          *
-         * @param uri The URI of the webpage to scrape.
+         * @param url The URL of the webpage to scrape.
          * @param directory The file directory where we should place the downloaded images.
          */
-        public Builder(URI uri, String directory) {
-            this.uri = uri;
+        public Builder(URL url, String directory) {
+            this.url = url;
             this.directory = directory;
         }
 

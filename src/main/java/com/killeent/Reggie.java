@@ -3,16 +3,16 @@ package com.killeent;
 import org.apache.commons.cli.*;
 
 import java.io.File;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Specifies the CLI to Reggie.
  */
 public class Reggie {
 
-    private static final String DEPTH_FLAG = "depth";
-    private static final String OUTBOUND_FLAG = "outbound";
+    public static final String DEPTH_FLAG = "depth";
+    public static final String OUTBOUND_FLAG = "outbound";
 
     public static void main(String[] args) {
         ImageScraperParams params = null;
@@ -56,18 +56,18 @@ public class Reggie {
 
         // Define command line flags
         Options options = new Options();
-        options.addOption(OptionBuilder.withLongOpt(DEPTH_FLAG)
-                .withDescription("crawl to a maximum depth of n")
+        options.addOption(OptionBuilder.withDescription("crawl to a maximum depth of n")
                 .hasArg()
                 .withArgName("n")
-                .create());
+                .withType(Integer.class)
+                .create(DEPTH_FLAG));
         options.addOption(OUTBOUND_FLAG, false, "crawl outbound links");
 
         // Params
         ImageScraperParams params;
 
         // Tries to extract the data for web scraping from the command line arguments
-        CommandLineParser parser = new BasicParser();
+        CommandLineParser parser = new GnuParser();
         CommandLine commandLine;
         try {
             // will throw exception if cannot parse
@@ -82,7 +82,7 @@ public class Reggie {
             }
 
             // will throw exception if not valid URI
-            URI uri = new URI(leftovers[0]);
+            URL uri = new URL(leftovers[0]);
 
             // check if valid directory
             String directory = leftovers[1];
@@ -105,11 +105,11 @@ public class Reggie {
 
             return builder.build();
         } catch (NumberFormatException n) {
-            throw new IllegalArgumentException(n.getMessage());
+            throw new IllegalArgumentException(n.getMessage(), n);
         } catch (ParseException p) {
-            throw new IllegalArgumentException(p.getMessage());
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            throw new IllegalArgumentException(p.getMessage(), p);
+        } catch (MalformedURLException m) {
+            throw new IllegalArgumentException(m.getMessage(), m);
         }
     }
 
@@ -117,6 +117,6 @@ public class Reggie {
      * Prints the CLI usage specifications.
      */
     private static void usage() {
-        System.out.println("Usage: java Reggie [-depth=n | -outbound ] uri output_directory");
+        System.out.println("Usage: java Reggie [--depth=n | -outbound ] uri output_directory");
     }
 }
