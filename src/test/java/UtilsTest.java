@@ -15,8 +15,6 @@ public class UtilsTest {
     /**
      * Tests that non-outbound links return false in a call to
      * {@link com.killeent.Utils#isOutboundLink(java.net.URL, java.net.URL)}
-     *
-     * TODO: figure out why this is causing target invocation exceptions
      */
     @Test
     public void testIsOutboundLinkFalse() {
@@ -26,6 +24,21 @@ public class UtilsTest {
             Assert.assertFalse(Utils.isOutboundLink(url1, url2));
         } catch (MalformedURLException e) {
             Assert.fail("Invalid format for testIsOutboundLinkFalse");
+        }
+    }
+
+    /**
+     * Tests that outbound links return true in a call to
+     * {@link com.killeent.Utils#isOutboundLink(java.net.URL, java.net.URL)}
+     */
+    @Test
+    public void testIsOutboundLinkTrue() {
+        try {
+            URL url1 = new URL("http://apple.com/iphone");
+            URL url2 = new URL("http://google.com/nexus");
+            Assert.assertTrue(Utils.isOutboundLink(url1, url2));
+        } catch (MalformedURLException e) {
+            Assert.fail("Invalid format for testIsOutboundLinkTrue");
         }
     }
 

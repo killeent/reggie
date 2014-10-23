@@ -11,32 +11,60 @@ import java.net.URISyntaxException;
  */
 public class Reggie {
 
-    private static final int DEFAULT_MAX_DEPTH = 3;
-    private static final boolean DEFAULT_FOLLOW_OUTBOUND_LINKS = false;
-
     private static final String DEPTH_FLAG = "depth";
     private static final String OUTBOUND_FLAG = "outbound";
 
     public static void main(String[] args) {
-        if (args.length < 2) {
+        ImageScraperParams params = null;
+
+        // try and initialize the params
+        try {
+            params = parseCommandLineParameters(args);
+        } catch (IllegalArgumentException e) {
+            System.out.println(e.getMessage());
             usage();
             System.exit(1);
+        }
+
+        // construct a placeholder scraper for now
+        ImageScraper scraper = new ImageScraper() {
+            @Override
+            public void scrapePage(ImageScraperParams params) {
+
+            }
+        };
+
+        scraper.scrapePage(params);
+    }
+
+    /**
+     * Static helper function to parse the command line arguments into an
+     * {@link com.killeent.ImageScraperParams}.
+     *
+     * @param args The arguments passed to main.
+     * @throws java.lang.IllegalArgumentException if the command line parameters are invalid
+     * in some way. This exception will store a message indicating what was wrong.
+     * @return ImageScraperParams that are determined by the users command line arguments
+     * and can be passed to an a call to
+     * {@link com.killeent.ImageScraper#scrapePage(ImageScraperParams)}.
+     */
+    public static ImageScraperParams parseCommandLineParameters(String[] args)
+            throws IllegalArgumentException {
+        if (args.length < 2) {
+            throw new IllegalArgumentException("Invalid call to reggie: missing parameters");
         }
 
         // Define command line flags
         Options options = new Options();
         options.addOption(OptionBuilder.withLongOpt(DEPTH_FLAG)
-                                       .withDescription("crawl to a maximum depth of n")
-                                       .hasArg()
-                                       .withArgName("n")
-                                       .create());
+                .withDescription("crawl to a maximum depth of n")
+                .hasArg()
+                .withArgName("n")
+                .create());
         options.addOption(OUTBOUND_FLAG, false, "crawl outbound links");
 
-        // Necessary arguments
-        boolean followOutboundLinks = DEFAULT_FOLLOW_OUTBOUND_LINKS;
-        int maxDepth = DEFAULT_MAX_DEPTH;
-        URI uri = null;
-        String directory = null;
+        // Params
+        ImageScraperParams params;
 
         // Tries to extract the data for web scraping from the command line arguments
         CommandLineParser parser = new BasicParser();
@@ -45,51 +73,49 @@ public class Reggie {
             // will throw exception if cannot parse
             commandLine = parser.parse(options, args);
 
-            // parse flags
-            followOutboundLinks = commandLine.hasOption(OUTBOUND_FLAG);
-            maxDepth = Integer.parseInt(
-                    commandLine.getOptionValue(DEPTH_FLAG, String.valueOf(DEFAULT_MAX_DEPTH)));
-
             // parse URI and directory
             String[] leftovers = commandLine.getArgs();
             if (leftovers.length != 2) {
                 // we are missing something
-                usage();
-                System.exit(1);
+                throw new IllegalArgumentException(
+                        "Invalid call to reggie: missing URI and/or directory");
             }
 
             // will throw exception if not valid URI
-            uri = new URI(leftovers[0]);
+            URI uri = new URI(leftovers[0]);
 
             // check if valid directory
-            directory = leftovers[1];
+            String directory = leftovers[1];
             File file = new File(directory);
             if (!file.isDirectory()) {
-                System.out.println("Invalid Directory");
-                System.exit(1);
+                throw new IllegalArgumentException(
+                        String.format("Invalid call to reggie: %s is not a valid directory\n",
+                                file.getAbsolutePath()));
             }
+
+            // Okay we can construct the parameter builder
+            ImageScraperParams.Builder builder = new ImageScraperParams.Builder(uri, directory);
+
+            // parse flags
+            builder.followOutboundLinks(commandLine.hasOption(OUTBOUND_FLAG));
+            String maxDepth = commandLine.getOptionValue(DEPTH_FLAG);
+            if (maxDepth != null) {
+                builder.maxDepth(Integer.valueOf(maxDepth));
+            }
+
+            return builder.build();
+        } catch (NumberFormatException n) {
+            throw new IllegalArgumentException(n.getMessage());
         } catch (ParseException p) {
-            usage();
-            System.exit(1);
+            throw new IllegalArgumentException(p.getMessage());
         } catch (URISyntaxException e) {
-            System.out.println("Invalid URI");
-            System.exit(1);
+            throw new IllegalArgumentException(e.getMessage());
         }
-
-        // now construct the parameters
-        ImageScraperParams params = new ImageScraperParams(maxDepth, followOutboundLinks);
-
-        // okay we have everything, let's scrape some images! (placeholder for now)
-        ImageScraper scraper = new ImageScraper() {
-            @Override
-            public void scrapePage(URI url, String path, ImageScraperParams params) {
-
-            }
-        };
-
-        scraper.scrapePage(uri, directory, params);
     }
 
+    /**
+     * Prints the CLI usage specifications.
+     */
     private static void usage() {
         System.out.println("Usage: java Reggie [-depth=n | -outbound ] uri output_directory");
     }
