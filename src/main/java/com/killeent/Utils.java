@@ -59,6 +59,7 @@ public class Utils {
         int i = 1;
         while(f.exists() && i < 100) {
             f = new File(directory, String.format("%s(%d)", imageName, i));
+            i++;
         }
 
         return f.exists() ? null : f.getAbsolutePath();

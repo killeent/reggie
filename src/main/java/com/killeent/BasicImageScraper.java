@@ -23,6 +23,7 @@ public class BasicImageScraper implements ImageScraper {
 
     @Override
     public void scrapePage(ImageScraperParams params) {
+        visitedPages.add(params.getURL().toString());
         scrapePage(params.getURL(), 0, params);
     }
 
@@ -34,6 +35,8 @@ public class BasicImageScraper implements ImageScraper {
      * @param params The scraping params.
      */
     private void scrapePage(URL page, int depth, ImageScraperParams params) {
+        System.out.printf("Scraping page: %s/%s\n", page.getHost(), page.getPath());
+
         Collection<String> links = new LinkedList<String>();
         Collection<String> images = new LinkedList<String>();
         try {
@@ -55,6 +58,7 @@ public class BasicImageScraper implements ImageScraper {
                 continue;
             }
             try {
+                System.out.printf("Downloading Image: %s\n", image);
                 Utils.downloadImage(new URL(image), path);
             } catch (MalformedURLException e) {
                 // fail silently
