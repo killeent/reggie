@@ -44,8 +44,4 @@ public class UtilsTest {
         }
     }
 
-    // Tests for getHTML
-
-    // TODO: implement this
-
 }
