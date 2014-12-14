@@ -103,6 +103,7 @@ public class ParallelImageScraper implements ImageScraper {
                     pageLock.lock();
                     // check to see if we've been here before
                     if (visitedPages.contains(link)) {
+                        pageLock.unlock();
                         continue;
                     }
                     visitedPages.add(link);
