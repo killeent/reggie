@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public class BasicImageScraper implements ImageScraper {
 
-    private Set<String> visitedPages;   // Pages we have scraped
+    private final Set<String> visitedPages;   // Pages we have scraped
 
     public BasicImageScraper() {
         visitedPages = new HashSet<String>();
@@ -25,6 +25,7 @@ public class BasicImageScraper implements ImageScraper {
     public void scrapePage(ImageScraperParams params) {
         visitedPages.add(params.getURL().toString());
         scrapePage(params.getURL(), 0, params);
+        visitedPages.clear();
     }
 
     /**
