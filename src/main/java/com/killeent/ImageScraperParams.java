@@ -20,6 +20,7 @@ public class ImageScraperParams {
     private final String directory;
     private final int maxDepth;
     private final boolean followOutboundLinks;
+    private final boolean scrapeInParallel;
 
     public URL getURL() {
         return url;
@@ -37,11 +38,16 @@ public class ImageScraperParams {
         return followOutboundLinks;
     }
 
+    public boolean scrapeInParallel() {
+        return scrapeInParallel;
+    }
+
     private ImageScraperParams(Builder builder) {
         this.url = builder.url;
         this.directory = builder.directory;
         this.maxDepth = builder.maxDepth;
         this.followOutboundLinks = builder.followOutboundLinks;
+        this.scrapeInParallel = builder.scrapeInParallel;
     }
 
     public static class Builder {
@@ -52,6 +58,7 @@ public class ImageScraperParams {
         // Optional Parameters
         private int maxDepth = DEFAULT_MAX_DEPTH;
         private boolean followOutboundLinks = DEFAULT_FOLLOW_OUTBOUND_LINKS;
+        private boolean scrapeInParallel = false;
 
         /**
          * Constructs a {@link com.killeent.ImageScraperParams} builder with the required
@@ -91,6 +98,17 @@ public class ImageScraperParams {
          */
         public Builder followOutboundLinks(boolean followOutboundLinks) {
             this.followOutboundLinks = followOutboundLinks;
+            return this;
+        }
+
+        /**
+         * If true, we will scrape pages in parallel by leveraging multiple threads.
+         *
+         * @param scrapeInParallel Whether to scrape in parallel.
+         * @return the Builder object
+         */
+        public Builder scrapeInParallel(boolean scrapeInParallel) {
+            this.scrapeInParallel = scrapeInParallel;
             return this;
         }
 

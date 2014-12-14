@@ -13,6 +13,7 @@ public class Reggie {
 
     public static final String DEPTH_FLAG = "depth";
     public static final String OUTBOUND_FLAG = "outbound";
+    public static final String PARALLEL_FLAG = "p";
 
     public static void main(String[] args) {
         ImageScraperParams params = null;
@@ -27,7 +28,9 @@ public class Reggie {
         }
 
         // construct a placeholder scraper for now
-        ImageScraper scraper = new BasicImageScraper();
+        ImageScraper scraper = params.scrapeInParallel() ?
+                new ParallelImageScraper() :
+                new BasicImageScraper();
 
         scraper.scrapePage(params);
     }
@@ -57,6 +60,7 @@ public class Reggie {
                 .withType(Integer.class)
                 .create(DEPTH_FLAG));
         options.addOption(OUTBOUND_FLAG, false, "crawl outbound links");
+        options.addOption(PARALLEL_FLAG, false, "scrape pages in parallel");
 
         // Params
         ImageScraperParams params;
@@ -97,6 +101,7 @@ public class Reggie {
             if (maxDepth != null) {
                 builder.maxDepth(Integer.valueOf(maxDepth));
             }
+            builder.scrapeInParallel(commandLine.hasOption(PARALLEL_FLAG));
 
             return builder.build();
         } catch (NumberFormatException n) {
@@ -112,6 +117,6 @@ public class Reggie {
      * Prints the CLI usage specifications.
      */
     private static void usage() {
-        System.out.println("Usage: java Reggie [--depth=n | -outbound ] uri output_directory");
+        System.out.println("Usage: java Reggie [--depth=n | -outbound | -p ] uri output_directory");
     }
 }
