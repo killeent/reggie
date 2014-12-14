@@ -27,12 +27,7 @@ public class Reggie {
         }
 
         // construct a placeholder scraper for now
-        ImageScraper scraper = new ImageScraper() {
-            @Override
-            public void scrapePage(ImageScraperParams params) {
-
-            }
-        };
+        ImageScraper scraper = new BasicImageScraper();
 
         scraper.scrapePage(params);
     }

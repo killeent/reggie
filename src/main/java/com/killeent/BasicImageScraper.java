@@ -1,6 +1,7 @@
 package com.killeent;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.HashSet;
@@ -33,33 +34,45 @@ public class BasicImageScraper implements ImageScraper {
      * @param params The scraping params.
      */
     private void scrapePage(URL page, int depth, ImageScraperParams params) {
+        Collection<String> links = new LinkedList<String>();
+        Collection<String> images = new LinkedList<String>();
         try {
             // get the HTML for the page
             String html = Utils.getHTML(page);
 
             // parse it
-            Collection<String> links = new LinkedList<String>();
-            Collection<String> images = new LinkedList<String>();
             PageParser.extractLinksAndImages(html, links, images);
 
-            // download the images
-            for (String image : images) {
-                String path = Utils.generateImagePath(image, params.getDirectory());
-                if (path == null) {
+        } catch (IOException e) {
+            System.err.printf(
+                    "Failed to scrape page: %s; error: %s\n", page.toString(), e.getMessage());
+        }
+
+        // download the images
+        for (String image : images) {
+            String path = Utils.generateImagePath(image, params.getDirectory());
+            if (path == null) {
+                continue;
+            }
+            try {
+                Utils.downloadImage(new URL(image), path);
+            } catch (MalformedURLException e) {
+                // fail silently
+            } catch (IOException e) {
+                System.err.printf("Failed to download image: %s\n", image);
+            }
+        }
+
+        // recursively scrape other pages
+        if (depth < params.maxDepth()) {
+            for (String link : links) {
+                // check to see if we've been here before
+                if (visitedPages.contains(link)) {
                     continue;
                 }
-                Utils.downloadImage(new URL(image), path);
-            }
+                visitedPages.add(link);
 
-            // recursively scrape other pages
-            if (depth < params.maxDepth()) {
-                for (String link : links) {
-                    // check to see if we've been here before
-                    if (visitedPages.contains(link)) {
-                        continue;
-                    }
-                    visitedPages.add(link);
-
+                try {
                     URL linkURL = new URL(link);
                     // check if the link is outbound; if it is, only scrape it if the params
                     // allow us to follow outbound links
@@ -70,12 +83,10 @@ public class BasicImageScraper implements ImageScraper {
 
                     // good to go!
                     scrapePage(linkURL, depth + 1, params);
+                } catch (MalformedURLException e) {
+                    // fail silently
                 }
             }
-
-        } catch (IOException e) {
-            System.err.printf(
-                    "Failed to scrape page: %s; error: %s\n", page.toString(), e.getMessage());
         }
     }
 

@@ -36,12 +36,16 @@ public class PageParser {
 
         // Place links in the links collection
         for (Element link : docLinks) {
-            links.add(link.attr("abs:href"));
+            if (!link.attr("abs:href").equals("")) {
+                links.add(link.attr("abs:href"));
+            }
         }
 
         // Place images in the images collection
         for (Element img : docImages) {
-            images.add(img.attr("abs:src"));
+            if (!img.attr("abs:src").equals("")) {
+                images.add(img.attr("abs:src"));
+            }
         }
     }
 
