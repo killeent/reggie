@@ -47,19 +47,18 @@ public class Utils {
      * must ensure that multiple calls to this function with the same name may generate
      * the same path if the image is not downloaded in between the calls.
      *
-     * @param image The URL of the image to download.
+     * @param imageLink The URL link of the image to download.
      * @param directory The directory to download the image to.
      * @return The absolute path of where to download the image as a combination of the directory
      * and the image's name. Returns NULL if a path cannot be generated
      */
-    public static String generateImagePath(URL image, String directory) {
-        String urlPath = image.getPath();
-        String imageName = urlPath.substring(urlPath.lastIndexOf('/') + 1);
-        File f = new File(urlPath, imageName);
+    public static String generateImagePath(String imageLink, String directory) {
+        String imageName = imageLink.substring(imageLink.lastIndexOf('/') + 1);
+        File f = new File(directory, imageName);
 
         int i = 1;
         while(f.exists() && i < 100) {
-            f = new File(urlPath, String.format("%s(%d)", imageName, i));
+            f = new File(directory, String.format("%s(%d)", imageName, i));
         }
 
         return f.exists() ? null : f.getAbsolutePath();

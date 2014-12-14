@@ -44,12 +44,11 @@ public class BasicImageScraper implements ImageScraper {
 
             // download the images
             for (String image : images) {
-                URL imageURL = new URL(image);
-                String path = Utils.generateImagePath(imageURL, params.getDirectory());
+                String path = Utils.generateImagePath(image, params.getDirectory());
                 if (path == null) {
                     continue;
                 }
-                Utils.downloadImage(imageURL, path);
+                Utils.downloadImage(new URL(image), path);
             }
 
             // recursively scrape other pages

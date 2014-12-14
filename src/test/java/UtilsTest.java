@@ -2,6 +2,8 @@ import com.killeent.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
@@ -41,6 +43,39 @@ public class UtilsTest {
             Assert.assertTrue(Utils.isOutboundLink(url1, url2));
         } catch (MalformedURLException e) {
             Assert.fail("Invalid format for testIsOutboundLinkTrue");
+        }
+    }
+
+    // Tests for generateImagePath
+
+    /**
+     * Tests generating an image path for a file that does not already exist
+     * in the temp directory.
+     */
+    @Test
+    public void testGenerateImagePathNewName() {
+        String image = "test.com/test_image_abc.jpg";
+        String temp = System.getProperty("java.io.tmpdir");
+        String expected = new File(temp, "test_image_abc.jpg").getAbsolutePath();
+        Assert.assertEquals(expected, Utils.generateImagePath(image, temp));
+    }
+
+    /**
+     * Tests generating an image path for a file that *does* already exist in the
+     * temp directory.
+     */
+    @Test
+    public void testGenerateImagePathDupName() {
+        String temp = System.getProperty("java.io.tmpdir");
+        File existing;
+        try {
+            existing = File.createTempFile("test_image_abc", ".jpg", new File(temp));
+            String expected = new File(temp, existing.getName() + "(1)").getAbsolutePath();
+            Assert.assertEquals(
+                expected, Utils.generateImagePath("test/" + existing.getName(), temp));
+            existing.delete();
+        } catch (IOException e) {
+            Assert.fail("Failed to create temp file in testGenerateImagePathDupName");
         }
     }
 
