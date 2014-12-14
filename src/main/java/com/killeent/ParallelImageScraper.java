@@ -14,11 +14,11 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Original Author: Trevor Killeen (2014)
  *
- * Parallel (Fork/Join) implementation of a {@link com.killeent.ImageScraper}.
+ * Parallel (ThreadPool) implementation of a {@link com.killeent.ImageScraper}.
  */
 public class ParallelImageScraper implements ImageScraper {
 
-    private final Set<String> visitedPages;   // Pages we have scraped
+    private final Set<String> visitedPages;   // pages we have scraped
     private final Lock pageLock;              // guards the visited pages set
     private final ExecutorService executor;   // executor for parallel scraping
 
@@ -30,19 +30,22 @@ public class ParallelImageScraper implements ImageScraper {
 
     @Override
     public void scrapePage(ImageScraperParams params) {
+        visitedPages.add(params.getURL().toString());
         PageScraper scraper = new PageScraper(params.getURL(), 0, params);
         executor.execute(scraper);
         try {
             executor.awaitTermination(60, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             System.err.printf("Scraping was interrupted\n");
+        } finally {
+            visitedPages.clear();
         }
     }
 
     /**
      * Runnable for scraping a Page.
      */
-    private static class PageScraper implements Runnable {
+    private class PageScraper implements Runnable {
 
         private final URL page;
         private final int depth;
@@ -87,17 +90,65 @@ public class ParallelImageScraper implements ImageScraper {
                 }
                 try {
                     System.out.printf("Downloading Image: %s\n", image);
-                    Utils.downloadImage(new URL(image), path);
-                } catch (MalformedURLException e) {
-                    // fail silently
+                    ImageDownloader downloader = new ImageDownloader(new URL(image), path);
+                    executor.execute(downloader);
                 } catch (IOException e) {
                     System.err.printf("Failed to download image: %s\n", image);
+                }
+            }
+
+            // recursively scrape other pages
+            if (depth < params.maxDepth()) {
+                for (String link : links) {
+                    pageLock.lock();
+                    // check to see if we've been here before
+                    if (visitedPages.contains(link)) {
+                        continue;
+                    }
+                    visitedPages.add(link);
+                    pageLock.unlock();
+
+                    try {
+                        URL linkURL = new URL(link);
+                        // check if the link is outbound; if it is, only scrape it if the params
+                        // allow us to follow outbound links
+                        boolean outbound = Utils.isOutboundLink(params.getURL(), linkURL);
+                        if (outbound && !params.followOutboundLinks()) {
+                            continue;
+                        }
+
+                        // good to go!
+                        PageScraper scraper = new PageScraper(linkURL, depth + 1, params);
+                        executor.execute(scraper);
+                    } catch (MalformedURLException e) {
+                        // fail silently
+                    }
                 }
             }
         }
     }
 
     /**
-     * Runnable for downloading an image.
+     * Runnable for downloading an image. Wraps a call to
+     * {@link com.killeent.Utils#downloadImage(java.net.URL, String)}.
      */
+    private class ImageDownloader implements Runnable {
+
+        private final URL image;
+        private final String path;
+
+        public ImageDownloader(URL image, String path) {
+            this.image = image;
+            this.path = path;
+        }
+
+        @Override
+        public void run() {
+            try {
+                Utils.downloadImage(image, path);
+            } catch (IOException e) {
+                System.err.printf("Failed to download image: %s\n", image);
+            }
+        }
+    }
 }
