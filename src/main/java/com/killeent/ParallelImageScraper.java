@@ -18,27 +18,38 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ParallelImageScraper implements ImageScraper {
 
-    private final Set<String> visitedPages;   // pages we have scraped
-    private final Lock pageLock;              // guards the visited pages set
-    private final ExecutorService executor;   // executor for parallel scraping
+    private final Set<String> visitedPages;         // pages we have scraped
+    private final Lock pageLock;                    // guards the visited pages set
+    private final Set<String> visitedImages;        // images we have scraped
+    private final Lock imageLock;                   // guards the visited images set
+    private final ExecutorService executor;         // executor for parallel scraping
+    private final RecursiveTaskManager taskManager; // keeps track of currently executing tasks
+
+    private static final long SCRAPER_TIMEOUT = 60 * 1000;  // 60s
 
     public ParallelImageScraper() {
         visitedPages = new HashSet<String>();
         pageLock = new ReentrantLock();
+        visitedImages = new HashSet<String>();
+        imageLock = new ReentrantLock();
         executor = Executors.newCachedThreadPool();
+        taskManager = new RecursiveTaskManager();
     }
 
     @Override
     public void scrapePage(ImageScraperParams params) {
         visitedPages.add(params.getURL().toString());
         PageScraper scraper = new PageScraper(params.getURL(), 0, params);
+        taskManager.queueTask();
         executor.execute(scraper);
         try {
-            executor.awaitTermination(60, TimeUnit.SECONDS);
+            taskManager.awaitCompletion(SCRAPER_TIMEOUT);
         } catch (InterruptedException e) {
             System.err.printf("Scraping was interrupted\n");
         } finally {
+            executor.shutdown();
             visitedPages.clear();
+            visitedImages.clear();
         }
     }
 
@@ -80,14 +91,26 @@ public class ParallelImageScraper implements ImageScraper {
             } catch (IOException e) {
                 System.err.printf(
                         "Failed to scrape page: %s; error: %s\n", page.toString(), e.getMessage());
+                taskManager.taskComplete();
+                return;
             }
 
             // download the images
             for (String image : images) {
+                imageLock.lock();
+                if (visitedImages.contains(image)) {
+                    imageLock.unlock();
+                    continue;
+                }
+                visitedImages.add(image);
+                imageLock.unlock();
+
+                // create a path for the uimage
                 String path = Utils.generateImagePath(image, params.getDirectory());
                 if (path == null) {
                     continue;
                 }
+
                 try {
                     System.out.printf("Downloading Image: %s\n", image);
                     ImageDownloader downloader = new ImageDownloader(new URL(image), path);
@@ -120,12 +143,15 @@ public class ParallelImageScraper implements ImageScraper {
 
                         // good to go!
                         PageScraper scraper = new PageScraper(linkURL, depth + 1, params);
+                        taskManager.queueTask();
                         executor.execute(scraper);
                     } catch (MalformedURLException e) {
                         // fail silently
                     }
                 }
             }
+
+            taskManager.taskComplete();
         }
     }
 
@@ -151,5 +177,39 @@ public class ParallelImageScraper implements ImageScraper {
                 System.err.printf("Failed to download image: %s\n", image);
             }
         }
+    }
+
+    /**
+     * Helper class to manage the recursive scraping. Used to block in
+     * {@link com.killeent.ParallelImageScraper#scrapePage(ImageScraperParams)} to wait for
+     * alll the recursive tasks to finish.
+     */
+    private class RecursiveTaskManager {
+        private int value = 0;
+        private Object lock = new Object();
+
+        public void queueTask() {
+            synchronized (lock) {
+                value++;
+            }
+        }
+
+        public void taskComplete() {
+            synchronized (lock) {
+                value--;
+                if (value == 0) {
+                    lock.notifyAll();
+                }
+            }
+        }
+
+        public void awaitCompletion(long timeout) throws InterruptedException {
+            synchronized (lock) {
+                while (value > 0) {
+                    lock.wait(timeout);
+                }
+            }
+        }
+
     }
 }

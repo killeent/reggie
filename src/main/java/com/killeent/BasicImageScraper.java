@@ -16,9 +16,11 @@ import java.util.Set;
 public class BasicImageScraper implements ImageScraper {
 
     private final Set<String> visitedPages;   // Pages we have scraped
+    private final Set<String> visitedImages;  // Images we have scraped
 
     public BasicImageScraper() {
         visitedPages = new HashSet<String>();
+        visitedImages = new HashSet<String>();
     }
 
     @Override
@@ -26,6 +28,7 @@ public class BasicImageScraper implements ImageScraper {
         visitedPages.add(params.getURL().toString());
         scrapePage(params.getURL(), 0, params);
         visitedPages.clear();
+        visitedImages.clear();
     }
 
     /**
@@ -50,14 +53,22 @@ public class BasicImageScraper implements ImageScraper {
         } catch (IOException e) {
             System.err.printf(
                     "Failed to scrape page: %s; error: %s\n", page.toString(), e.getMessage());
+            return;
         }
 
         // download the images
         for (String image : images) {
+            if (visitedImages.contains(image)) {
+                continue;
+            }
+            visitedImages.add(image);
+
+            // create a path for the image
             String path = Utils.generateImagePath(image, params.getDirectory());
             if (path == null) {
                 continue;
             }
+
             try {
                 System.out.printf("Downloading Image: %s\n", image);
                 Utils.downloadImage(new URL(image), path);
