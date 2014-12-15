@@ -19,9 +19,9 @@ import java.util.concurrent.locks.ReentrantLock;
 public class ParallelImageScraper implements ImageScraper {
 
     private final Set<String> visitedPages;         // pages we have scraped
-    private final Lock pageLock;                    // guards the visited pages set
+    private final Object pageLock;                  // guards the visited pages set
     private final Set<String> visitedImages;        // images we have scraped
-    private final Lock imageLock;                   // guards the visited images set
+    private final Object imageLock;                 // guards the visited images set
     private final ExecutorService executor;         // executor for parallel scraping
     private final RecursiveTaskManager taskManager; // keeps track of currently executing tasks
 
@@ -29,9 +29,9 @@ public class ParallelImageScraper implements ImageScraper {
 
     public ParallelImageScraper() {
         visitedPages = new HashSet<String>();
-        pageLock = new ReentrantLock();
+        pageLock = new Object();
         visitedImages = new HashSet<String>();
-        imageLock = new ReentrantLock();
+        imageLock = new Object();
         executor = Executors.newCachedThreadPool();
         taskManager = new RecursiveTaskManager();
     }
@@ -97,13 +97,12 @@ public class ParallelImageScraper implements ImageScraper {
 
             // download the images
             for (String image : images) {
-                imageLock.lock();
-                if (visitedImages.contains(image)) {
-                    imageLock.unlock();
-                    continue;
+                synchronized (imageLock) {
+                    if (visitedImages.contains(image)) {
+                        continue;
+                    }
+                    visitedImages.add(image);
                 }
-                visitedImages.add(image);
-                imageLock.unlock();
 
                 // create a path for the uimage
                 String path = Utils.generateImagePath(image, params.getDirectory());
@@ -114,6 +113,7 @@ public class ParallelImageScraper implements ImageScraper {
                 try {
                     System.out.printf("Downloading Image: %s\n", image);
                     ImageDownloader downloader = new ImageDownloader(new URL(image), path);
+                    taskManager.queueTask();
                     executor.execute(downloader);
                 } catch (IOException e) {
                     System.err.printf("Failed to download image: %s\n", image);
@@ -123,14 +123,13 @@ public class ParallelImageScraper implements ImageScraper {
             // recursively scrape other pages
             if (depth < params.maxDepth()) {
                 for (String link : links) {
-                    pageLock.lock();
-                    // check to see if we've been here before
-                    if (visitedPages.contains(link)) {
-                        pageLock.unlock();
-                        continue;
+                    synchronized (pageLock) {
+                        // check to see if we've been here before
+                        if (visitedPages.contains(link)) {
+                            continue;
+                        }
+                        visitedPages.add(link);
                     }
-                    visitedPages.add(link);
-                    pageLock.unlock();
 
                     try {
                         URL linkURL = new URL(link);
@@ -175,6 +174,8 @@ public class ParallelImageScraper implements ImageScraper {
                 Utils.downloadImage(image, path);
             } catch (IOException e) {
                 System.err.printf("Failed to download image: %s\n", image);
+            } finally {
+                taskManager.taskComplete();
             }
         }
     }
